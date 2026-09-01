@@ -1,0 +1,6 @@
+{
+  "name": "Foody - Online Food Delivery & Restaurant Platform",
+  "description": "Premium food ordering platform featuring live GPS tracking, user & admin dashboards, interactive checkout, PDF invoices, and Gemini AI food assistant.",
+  "requestFramePermissions": ["geolocation"],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
