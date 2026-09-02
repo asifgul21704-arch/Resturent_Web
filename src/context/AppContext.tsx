@@ -22,10 +22,15 @@ interface Toast {
   type: 'success' | 'info' | 'warning' | 'error';
 }
 
+export type AdminTab = 'menu_crud' | 'orders_dispatch' | 'promos' | 'analytics' | 'customers' | 'settings';
+
 interface AppContextType {
   // Navigation / Views
   currentView: string;
   setCurrentView: (view: string) => void;
+  adminActiveTab: AdminTab;
+  setAdminActiveTab: (tab: AdminTab) => void;
+  openAdminTab: (tab?: AdminTab) => void;
   searchQuery: string;
   setSearchQuery: (query: string) => void;
   selectedCategory: string;
@@ -36,6 +41,9 @@ interface AppContextType {
   addFoodItem: (item: Omit<FoodItem, 'id'>) => void;
   updateFoodItem: (id: string, updates: Partial<FoodItem>) => void;
   deleteFoodItem: (id: string) => void;
+  bulkDeleteFoodItems: (ids: string[]) => void;
+  bulkToggleStock: (ids: string[], inStock: boolean) => void;
+  resetMenuToDefault: () => void;
   toggleStockStatus: (id: string) => void;
 
   // Cart
@@ -47,6 +55,10 @@ interface AppContextType {
   cartCount: number;
   cartSubtotal: number;
   appliedPromo: PromoCode | null;
+  promoCodes: PromoCode[];
+  addPromoCode: (promo: PromoCode) => void;
+  deletePromoCode: (code: string) => void;
+  togglePromoCodeStatus: (code: string) => void;
   applyPromoCode: (code: string) => { success: boolean; message: string };
   removePromoCode: () => void;
   cartDiscount: number;
@@ -73,6 +85,8 @@ interface AppContextType {
   updateOrderStatus: (orderId: string, status: OrderStatus) => void;
   advanceOrderStatus: (orderId: string) => void;
   cancelOrder: (orderId: string) => void;
+  deleteOrder: (orderId: string) => void;
+  assignCourier: (orderId: string, courierName: string, phone?: string, vehicle?: string) => void;
 
   // Live GPS Simulation
   activeLiveOrder: Order | null;
@@ -111,9 +125,26 @@ const AppContext = createContext<AppContextType | undefined>(undefined);
 
 export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   // Navigation
-  const [currentView, setCurrentView] = useState<string>('home');
+  const [currentView, setCurrentViewState] = useState<string>('home');
+  const [adminActiveTab, setAdminActiveTab] = useState<AdminTab>('menu_crud');
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [selectedCategory, setSelectedCategory] = useState<string>('All');
+
+  const setCurrentView = (view: string) => {
+    let normalized = view;
+    if (view === 'admin-dashboard') normalized = 'admin_dashboard';
+    if (view === 'user-dashboard') normalized = 'user_dashboard';
+    setCurrentViewState(normalized);
+  };
+
+  const openAdminTab = (tab: AdminTab = 'menu_crud') => {
+    if (currentUser?.role !== 'admin') {
+      setCurrentUser(DEFAULT_USERS[1]);
+      showToast('Switched to Admin Account (Chef Alessandro)', 'info');
+    }
+    setAdminActiveTab(tab);
+    setCurrentViewState('admin_dashboard');
+  };
 
   // Food Items state
   const [foodItems, setFoodItems] = useState<FoodItem[]>(() => {
@@ -133,6 +164,10 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     return saved ? JSON.parse(saved) : [];
   });
   const [appliedPromo, setAppliedPromo] = useState<PromoCode | null>(null);
+  const [promoCodes, setPromoCodes] = useState<PromoCode[]>(() => {
+    const saved = localStorage.getItem('foody_promos');
+    return saved ? JSON.parse(saved) : PROMO_CODES.map(p => ({ ...p, isActive: true }));
+  });
   const [tipAmount, setTipAmount] = useState<number>(3.00);
 
   // Orders State
@@ -165,6 +200,10 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   useEffect(() => {
     localStorage.setItem('foody_items', JSON.stringify(foodItems));
   }, [foodItems]);
+
+  useEffect(() => {
+    localStorage.setItem('foody_promos', JSON.stringify(promoCodes));
+  }, [promoCodes]);
 
   useEffect(() => {
     if (currentUser) {
@@ -253,6 +292,22 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     showToast(`Removed "${item?.name || 'item'}" from menu`, 'info');
   };
 
+  const bulkDeleteFoodItems = (ids: string[]) => {
+    setFoodItems(prev => prev.filter(item => !ids.includes(item.id)));
+    showToast(`Removed ${ids.length} dish(es) from menu`, 'info');
+  };
+
+  const bulkToggleStock = (ids: string[], inStock: boolean) => {
+    setFoodItems(prev => prev.map(item => ids.includes(item.id) ? { ...item, inStock } : item));
+    showToast(`Updated stock status for ${ids.length} dish(es)`, 'success');
+  };
+
+  const resetMenuToDefault = () => {
+    setFoodItems(INITIAL_FOOD_ITEMS);
+    localStorage.setItem('foody_items', JSON.stringify(INITIAL_FOOD_ITEMS));
+    showToast('Reset menu catalog to culinary defaults', 'info');
+  };
+
   const toggleStockStatus = (id: string) => {
     setFoodItems(prev => prev.map(item => {
       if (item.id === id) {
@@ -331,10 +386,10 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
   const applyPromoCode = (codeStr: string) => {
     const trimmed = codeStr.trim().toUpperCase();
-    const promo = PROMO_CODES.find(p => p.code === trimmed);
+    const promo = promoCodes.find(p => p.code === trimmed && p.isActive !== false);
 
     if (!promo) {
-      return { success: false, message: 'Invalid promo code. Try FOODY20, FREESHIP or SAVE10' };
+      return { success: false, message: 'Invalid or inactive promo code.' };
     }
 
     if (cartSubtotal < promo.minOrder) {
@@ -352,6 +407,32 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const removePromoCode = () => {
     setAppliedPromo(null);
     showToast('Promo code removed', 'info');
+  };
+
+  const addPromoCode = (promo: PromoCode) => {
+    const uppercaseCode = promo.code.trim().toUpperCase();
+    const newPromo = { ...promo, code: uppercaseCode, isActive: true };
+    setPromoCodes(prev => [newPromo, ...prev.filter(p => p.code !== uppercaseCode)]);
+    showToast(`Created promo code "${uppercaseCode}"!`, 'success');
+  };
+
+  const deletePromoCode = (code: string) => {
+    setPromoCodes(prev => prev.filter(p => p.code !== code));
+    if (appliedPromo?.code === code) {
+      setAppliedPromo(null);
+    }
+    showToast(`Deleted promo voucher "${code}"`, 'info');
+  };
+
+  const togglePromoCodeStatus = (code: string) => {
+    setPromoCodes(prev => prev.map(p => {
+      if (p.code === code) {
+        const next = !(p.isActive !== false);
+        showToast(`Promo ${code} is now ${next ? 'Active' : 'Paused'}`, 'info');
+        return { ...p, isActive: next };
+      }
+      return p;
+    }));
   };
 
   let cartDiscount = 0;
@@ -610,6 +691,44 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     showToast(`Order #${orderId} was cancelled`, 'warning');
   };
 
+  const deleteOrder = (orderId: string) => {
+    setOrders(prev => prev.filter(o => o.id !== orderId));
+    if (activeLiveOrder?.id === orderId) {
+      setActiveLiveOrder(null);
+    }
+    showToast(`Deleted order #${orderId}`, 'info');
+  };
+
+  const assignCourier = (orderId: string, courierName: string, phone?: string, vehicle?: string) => {
+    setOrders(prev => prev.map(o => {
+      if (o.id === orderId) {
+        const currentCourier = o.courier || {
+          name: courierName,
+          phone: phone || '+1 (555) 890-1234',
+          vehicle: vehicle || 'Electric Vespa Scooter (Red)',
+          plateNumber: 'FDY-8921',
+          rating: 4.98,
+          avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=200&q=80',
+          currentLat: 41.9028,
+          currentLng: 12.4964,
+          etaMinutes: 20
+        };
+        return {
+          ...o,
+          courierName,
+          courier: {
+            ...currentCourier,
+            name: courierName,
+            phone: phone || currentCourier.phone,
+            vehicle: vehicle || currentCourier.vehicle
+          }
+        };
+      }
+      return o;
+    }));
+    showToast(`Assigned courier "${courierName}" to order`, 'success');
+  };
+
   // Favorites
   const toggleFavorite = (id: string) => {
     setFavorites(prev => {
@@ -631,6 +750,9 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       value={{
         currentView,
         setCurrentView,
+        adminActiveTab,
+        setAdminActiveTab,
+        openAdminTab,
         searchQuery,
         setSearchQuery,
         selectedCategory,
@@ -639,6 +761,9 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         addFoodItem,
         updateFoodItem,
         deleteFoodItem,
+        bulkDeleteFoodItems,
+        bulkToggleStock,
+        resetMenuToDefault,
         toggleStockStatus,
         cart,
         addToCart,
@@ -648,6 +773,10 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         cartCount,
         cartSubtotal,
         appliedPromo,
+        promoCodes,
+        addPromoCode,
+        deletePromoCode,
+        togglePromoCodeStatus,
         applyPromoCode,
         removePromoCode,
         cartDiscount,
@@ -670,6 +799,8 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         updateOrderStatus,
         advanceOrderStatus: advanceLiveOrderProgress,
         cancelOrder,
+        deleteOrder,
+        assignCourier,
         activeLiveOrder,
         setActiveLiveOrder,
         advanceLiveOrderProgress,

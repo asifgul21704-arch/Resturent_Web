@@ -148,6 +148,7 @@ export interface PromoCode {
   minOrder: number;
   freeShipping?: boolean;
   description: string;
+  isActive?: boolean;
 }
 
 export interface AIChatMessage {

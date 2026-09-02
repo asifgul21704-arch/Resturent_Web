@@ -96,8 +96,8 @@ export const UserDashboard: React.FC = () => {
               <h1 className="text-2xl sm:text-3xl font-black text-[#2C2724] font-display">
                 {currentUser?.name || 'Sarah Mitchell'}
               </h1>
-              <span className="px-3 py-0.5 bg-orange-100 text-[#E85B43] text-xs font-bold rounded-full capitalize">
-                {currentUser?.role || 'Customer'}
+              <span className="px-3 py-0.5 bg-orange-100 text-[#E85B43] text-xs font-bold rounded-full">
+                Verified Member
               </span>
             </div>
             <p className="text-xs sm:text-sm text-[#78716A] mt-1">

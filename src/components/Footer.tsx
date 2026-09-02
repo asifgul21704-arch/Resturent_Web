@@ -1,9 +1,9 @@
 import React from 'react';
 import { useApp } from '../context/AppContext';
-import { Instagram, Facebook, Globe, Sparkles } from 'lucide-react';
+import { Instagram, Facebook, Globe, Sparkles, ChefHat } from 'lucide-react';
 
 export const Footer: React.FC = () => {
-  const { setCurrentView, setSelectedCategory, setIsAIAssistantOpen } = useApp();
+  const { setCurrentView, setSelectedCategory, setIsAIAssistantOpen, openAdminTab } = useApp();
 
   return (
     <footer className="bg-[#FFFDF9] border-t border-[#F0EAE1] pt-16 pb-12">
@@ -80,6 +80,12 @@ export const Footer: React.FC = () => {
               <li>
                 <button onClick={() => setCurrentView('offers')} className="hover:text-[#E85B43] transition-colors">
                   Current Deals
+                </button>
+              </li>
+              <li>
+                <button onClick={() => openAdminTab('menu_crud')} className="hover:text-[#E85B43] transition-colors flex items-center gap-1.5 font-bold text-[#2C2724]">
+                  <ChefHat className="w-3.5 h-3.5 text-[#E85B43]" />
+                  <span>Admin & Kitchen Portal</span>
                 </button>
               </li>
               <li>

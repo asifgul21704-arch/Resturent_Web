@@ -1,12 +1,35 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useApp } from '../context/AppContext';
-import { Search, ShoppingBag, User, UtensilsCrossed, ShieldAlert, LogOut, Heart, Compass, MapPin } from 'lucide-react';
+import { 
+  Search, 
+  ShoppingBag, 
+  User, 
+  UtensilsCrossed, 
+  ShieldAlert, 
+  LogOut, 
+  Heart, 
+  Compass, 
+  MapPin, 
+  ChefHat, 
+  LayoutDashboard, 
+  Utensils, 
+  Bike, 
+  Tag, 
+  BarChart3, 
+  ChevronRight, 
+  ShieldCheck, 
+  Sparkles,
+  ArrowRight
+} from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 
 export const Navbar: React.FC = () => {
   const {
     currentView,
     setCurrentView,
+    adminActiveTab,
+    setAdminActiveTab,
+    openAdminTab,
     cartCount,
     setIsCartDrawerOpen,
     currentUser,
@@ -14,6 +37,8 @@ export const Navbar: React.FC = () => {
     logoutUser,
     switchDemoUser,
     foodItems,
+    orders,
+    favorites,
     setSelectedFoodDetail,
     searchQuery,
     setSearchQuery
@@ -22,6 +47,30 @@ export const Navbar: React.FC = () => {
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+
+  const profileMenuRef = useRef<HTMLDivElement>(null);
+  const searchRef = useRef<HTMLDivElement>(null);
+
+  // Close menus when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (profileMenuRef.current && !profileMenuRef.current.contains(event.target as Node)) {
+        setIsProfileMenuOpen(false);
+      }
+      if (searchRef.current && !searchRef.current.contains(event.target as Node)) {
+        setIsSearchOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  // Customer account stats
+  const userOrders = orders.filter(
+    o => o.userId === currentUser?.id || o.customerId === currentUser?.id || o.customerEmail === currentUser?.email
+  );
+  const userFavoritesCount = favorites?.length || 0;
+  const userAddressesCount = currentUser?.addresses?.length || 0;
 
   // Instant search results
   const searchResults = searchQuery.trim().length > 0
@@ -68,7 +117,7 @@ export const Navbar: React.FC = () => {
             <button
               id="nav-home"
               onClick={() => handleNavClick('home')}
-              className={`transition-colors relative py-1 ${
+              className={`transition-all duration-200 relative py-1 ${
                 currentView === 'home'
                   ? 'text-[#2C2724] font-bold after:content-[""] after:absolute after:bottom-0 after:left-0 after:right-0 after:h-[2.5px] after:bg-[#E85B43] after:rounded-full'
                   : 'text-[#6B655F] hover:text-[#E85B43]'
@@ -79,9 +128,9 @@ export const Navbar: React.FC = () => {
             <button
               id="nav-menu"
               onClick={() => handleNavClick('menu')}
-              className={`transition-colors py-1 ${
+              className={`transition-all duration-200 relative py-1 ${
                 currentView === 'menu'
-                  ? 'text-[#2C2724] font-bold text-[#E85B43]'
+                  ? 'text-[#E85B43] font-bold after:content-[""] after:absolute after:bottom-0 after:left-0 after:right-0 after:h-[2.5px] after:bg-[#E85B43] after:rounded-full'
                   : 'text-[#6B655F] hover:text-[#E85B43]'
               }`}
             >
@@ -90,9 +139,9 @@ export const Navbar: React.FC = () => {
             <button
               id="nav-offers"
               onClick={() => handleNavClick('offers')}
-              className={`transition-colors py-1 ${
+              className={`transition-all duration-200 relative py-1 ${
                 currentView === 'offers'
-                  ? 'text-[#2C2724] font-bold text-[#E85B43]'
+                  ? 'text-[#E85B43] font-bold after:content-[""] after:absolute after:bottom-0 after:left-0 after:right-0 after:h-[2.5px] after:bg-[#E85B43] after:rounded-full'
                   : 'text-[#6B655F] hover:text-[#E85B43]'
               }`}
             >
@@ -101,9 +150,9 @@ export const Navbar: React.FC = () => {
             <button
               id="nav-foods"
               onClick={() => handleNavClick('foods')}
-              className={`transition-colors py-1 ${
+              className={`transition-all duration-200 relative py-1 ${
                 currentView === 'foods'
-                  ? 'text-[#2C2724] font-bold text-[#E85B43]'
+                  ? 'text-[#E85B43] font-bold after:content-[""] after:absolute after:bottom-0 after:left-0 after:right-0 after:h-[2.5px] after:bg-[#E85B43] after:rounded-full'
                   : 'text-[#6B655F] hover:text-[#E85B43]'
               }`}
             >
@@ -112,9 +161,9 @@ export const Navbar: React.FC = () => {
             <button
               id="nav-services"
               onClick={() => handleNavClick('services')}
-              className={`transition-colors py-1 ${
+              className={`transition-all duration-200 relative py-1 ${
                 currentView === 'services'
-                  ? 'text-[#2C2724] font-bold text-[#E85B43]'
+                  ? 'text-[#E85B43] font-bold after:content-[""] after:absolute after:bottom-0 after:left-0 after:right-0 after:h-[2.5px] after:bg-[#E85B43] after:rounded-full'
                   : 'text-[#6B655F] hover:text-[#E85B43]'
               }`}
             >
@@ -123,14 +172,30 @@ export const Navbar: React.FC = () => {
             <button
               id="nav-restaurants"
               onClick={() => handleNavClick('restaurants')}
-              className={`transition-colors py-1 ${
+              className={`transition-all duration-200 relative py-1 ${
                 currentView === 'restaurants'
-                  ? 'text-[#2C2724] font-bold text-[#E85B43]'
+                  ? 'text-[#E85B43] font-bold after:content-[""] after:absolute after:bottom-0 after:left-0 after:right-0 after:h-[2.5px] after:bg-[#E85B43] after:rounded-full'
                   : 'text-[#6B655F] hover:text-[#E85B43]'
               }`}
             >
               Restaurants
             </button>
+            {currentUser?.role === 'admin' && (
+              <button
+                id="nav-admin-dashboard"
+                onClick={() => openAdminTab('menu_crud')}
+                className={`transition-all duration-200 relative py-1 flex items-center gap-1.5 ${
+                  currentView === 'admin_dashboard' || currentView === 'admin-dashboard'
+                    ? 'text-[#E85B43] font-bold after:content-[""] after:absolute after:bottom-0 after:left-0 after:right-0 after:h-[2.5px] after:bg-[#E85B43] after:rounded-full'
+                    : 'text-[#6B655F] hover:text-[#E85B43]'
+                }`}
+              >
+                <span>Dashboard</span>
+                <span className="text-[10px] bg-[#E85B43]/10 text-[#E85B43] font-black px-1.5 py-0.5 rounded-full">
+                  Admin
+                </span>
+              </button>
+            )}
           </nav>
 
           {/* Right Action Icons: Search, Cart, Sign In / Profile */}
@@ -239,17 +304,25 @@ export const Navbar: React.FC = () => {
 
             {/* User Profile / Sign In button matching screenshot */}
             {currentUser ? (
-              <div className="relative">
+              <div className="relative" ref={profileMenuRef}>
                 <button
                   id="user-profile-menu-toggle"
                   onClick={() => setIsProfileMenuOpen(!isProfileMenuOpen)}
-                  className="flex items-center gap-2 pl-2 pr-3 py-1.5 rounded-full bg-[#FAF7F2] border border-[#EAE3D5] hover:border-[#E85B43]/50 transition-colors"
+                  className={`flex items-center gap-2 pl-2 pr-3 py-1.5 rounded-full border transition-all ${
+                    isProfileMenuOpen 
+                      ? 'bg-white border-[#E85B43] shadow-md ring-2 ring-[#E85B43]/20' 
+                      : 'bg-[#FAF7F2] border-[#EAE3D5] hover:border-[#E85B43]/50'
+                  }`}
+                  title="User Profile & Admin Command Center"
                 >
-                  <img
-                    src={currentUser.avatar}
-                    alt={currentUser.name}
-                    className="w-7 h-7 rounded-full object-cover border border-[#E85B43]"
-                  />
+                  <div className="relative">
+                    <img
+                      src={currentUser.avatar}
+                      alt={currentUser.name}
+                      className="w-7 h-7 rounded-full object-cover border border-[#E85B43]"
+                    />
+                    <span className="absolute bottom-0 right-0 w-2 h-2 rounded-full bg-emerald-500 ring-1 ring-white" />
+                  </div>
                   <span className="text-xs font-bold text-[#2C2724] hidden sm:inline max-w-[90px] truncate">
                     {currentUser.name.split(' ')[0]}
                   </span>
@@ -264,64 +337,157 @@ export const Navbar: React.FC = () => {
                 <AnimatePresence>
                   {isProfileMenuOpen && (
                     <motion.div
-                      initial={{ opacity: 0, y: 8, scale: 0.95 }}
+                      id="header-user-profile-dropdown"
+                      initial={{ opacity: 0, y: 10, scale: 0.96 }}
                       animate={{ opacity: 1, y: 0, scale: 1 }}
-                      exit={{ opacity: 0, y: 8, scale: 0.95 }}
-                      className="absolute right-0 mt-3 w-64 bg-white rounded-2xl shadow-2xl border border-[#EDE7DD] p-2 z-50"
+                      exit={{ opacity: 0, y: 8, scale: 0.96 }}
+                      transition={{ duration: 0.18, ease: 'easeOut' }}
+                      className="absolute right-0 mt-3 w-80 bg-white rounded-3xl shadow-[0_20px_50px_rgba(0,0,0,0.16)] border border-[#EAE3D5] p-3.5 z-50 overflow-hidden text-[#2C2724]"
                     >
-                      <div className="px-3 py-2.5 border-b border-[#F5EFE6]">
-                        <p className="text-sm font-bold text-[#2C2724]">{currentUser.name}</p>
-                        <p className="text-xs text-[#8C847A] truncate">{currentUser.email}</p>
-                        <span className="inline-block mt-1 text-[11px] font-semibold uppercase tracking-wider text-[#E85B43]">
-                          {currentUser.role} Account
-                        </span>
+                      {/* 1. Header: User Info Card */}
+                      <div className="flex items-center gap-3 p-3 rounded-2xl bg-[#FAF7F2] border border-[#EDE7DD] mb-3">
+                        <div className="relative shrink-0">
+                          <img
+                            src={currentUser.avatar}
+                            alt={currentUser.name}
+                            className="w-11 h-11 rounded-full object-cover border-2 border-[#E85B43] shadow-xs"
+                          />
+                          <span className="absolute bottom-0 right-0 w-3 h-3 rounded-full bg-emerald-500 ring-2 ring-white" />
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center justify-between">
+                            <p className="text-sm font-bold text-[#2C2724] truncate">{currentUser.name}</p>
+                            <span className="text-[10px] font-bold bg-[#E85B43]/10 text-[#E85B43] px-2 py-0.5 rounded-full">
+                              {currentUser.role === 'admin' ? 'Admin' : 'Member'}
+                            </span>
+                          </div>
+                          <p className="text-xs text-[#8C847A] truncate">{currentUser.email}</p>
+                        </div>
                       </div>
 
-                      <div className="py-1 space-y-0.5 text-sm">
+                      {/* 2. Customer Navigation Items */}
+                      <div className="space-y-1">
                         <button
-                          id="menu-user-dashboard"
+                          id="menu-user-orders"
                           onClick={() => {
-                            setCurrentView('user-dashboard');
+                            setCurrentView('user_dashboard');
                             setIsProfileMenuOpen(false);
                           }}
-                          className="w-full text-left px-3 py-2 rounded-xl text-[#2C2724] hover:bg-[#FAF7F2] flex items-center gap-2.5 transition-colors"
+                          className="w-full text-left px-3 py-2.5 rounded-xl hover:bg-[#FAF7F2] flex items-center justify-between text-xs font-bold text-[#2C2724] transition-colors group"
                         >
-                          <User className="w-4 h-4 text-[#E85B43]" />
-                          <span>My Profile & Orders</span>
+                          <div className="flex items-center gap-2.5">
+                            <div className="w-7 h-7 rounded-lg bg-orange-50 text-[#E85B43] flex items-center justify-center">
+                              <ShoppingBag className="w-4 h-4" />
+                            </div>
+                            <span>My Orders & Live Tracking</span>
+                          </div>
+                          {userOrders.length > 0 ? (
+                            <span className="px-2 py-0.5 rounded-full bg-orange-100 text-[#E85B43] text-[10px] font-black">
+                              {userOrders.length}
+                            </span>
+                          ) : (
+                            <ChevronRight className="w-3.5 h-3.5 text-[#8C847A] group-hover:translate-x-0.5 transition-transform" />
+                          )}
                         </button>
 
                         <button
-                          id="menu-admin-dashboard"
+                          id="menu-user-favorites"
                           onClick={() => {
-                            setCurrentView('admin-dashboard');
+                            setCurrentView('user_dashboard');
                             setIsProfileMenuOpen(false);
                           }}
-                          className="w-full text-left px-3 py-2 rounded-xl text-[#2C2724] hover:bg-[#FAF7F2] flex items-center gap-2.5 transition-colors"
+                          className="w-full text-left px-3 py-2.5 rounded-xl hover:bg-[#FAF7F2] flex items-center justify-between text-xs font-bold text-[#2C2724] transition-colors group"
                         >
-                          <ShieldAlert className="w-4 h-4 text-emerald-600" />
-                          <span className="font-semibold">Admin Dashboard</span>
+                          <div className="flex items-center gap-2.5">
+                            <div className="w-7 h-7 rounded-lg bg-rose-50 text-rose-500 flex items-center justify-center">
+                              <Heart className="w-4 h-4" />
+                            </div>
+                            <span>Wishlist & Favorites</span>
+                          </div>
+                          {userFavoritesCount > 0 ? (
+                            <span className="px-2 py-0.5 rounded-full bg-rose-100 text-rose-600 text-[10px] font-black">
+                              {userFavoritesCount}
+                            </span>
+                          ) : (
+                            <ChevronRight className="w-3.5 h-3.5 text-[#8C847A] group-hover:translate-x-0.5 transition-transform" />
+                          )}
                         </button>
 
                         <button
+                          id="menu-user-addresses"
                           onClick={() => {
-                            switchDemoUser(currentUser.role === 'admin' ? 'customer' : 'admin');
+                            setCurrentView('user_dashboard');
                             setIsProfileMenuOpen(false);
                           }}
-                          className="w-full text-left px-3 py-2 rounded-xl text-[#6B655F] hover:bg-[#FAF7F2] flex items-center gap-2.5 text-xs transition-colors"
+                          className="w-full text-left px-3 py-2.5 rounded-xl hover:bg-[#FAF7F2] flex items-center justify-between text-xs font-bold text-[#2C2724] transition-colors group"
                         >
-                          <Compass className="w-4 h-4 text-indigo-500" />
-                          <span>Switch to {currentUser.role === 'admin' ? 'Customer' : 'Admin'} Mode</span>
+                          <div className="flex items-center gap-2.5">
+                            <div className="w-7 h-7 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center">
+                              <MapPin className="w-4 h-4" />
+                            </div>
+                            <span>Saved Delivery Addresses</span>
+                          </div>
+                          {userAddressesCount > 0 ? (
+                            <span className="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 text-[10px] font-black">
+                              {userAddressesCount}
+                            </span>
+                          ) : (
+                            <ChevronRight className="w-3.5 h-3.5 text-[#8C847A] group-hover:translate-x-0.5 transition-transform" />
+                          )}
                         </button>
 
                         <button
+                          id="menu-user-profile-settings"
+                          onClick={() => {
+                            setCurrentView('user_dashboard');
+                            setIsProfileMenuOpen(false);
+                          }}
+                          className="w-full text-left px-3 py-2.5 rounded-xl hover:bg-[#FAF7F2] flex items-center justify-between text-xs font-bold text-[#2C2724] transition-colors group"
+                        >
+                          <div className="flex items-center gap-2.5">
+                            <div className="w-7 h-7 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center">
+                              <User className="w-4 h-4" />
+                            </div>
+                            <span>Account Profile Settings</span>
+                          </div>
+                          <ChevronRight className="w-3.5 h-3.5 text-[#8C847A] group-hover:translate-x-0.5 transition-transform" />
+                        </button>
+                      </div>
+
+                      {/* 3. Role switch / Admin portal only if admin */}
+                      {currentUser.role === 'admin' && (
+                        <div className="pt-2 mt-2 border-t border-[#F2ECE3]">
+                          <button
+                            id="menu-admin-portal-link"
+                            onClick={() => {
+                              openAdminTab('menu_crud');
+                              setIsProfileMenuOpen(false);
+                            }}
+                            className="w-full text-left px-3 py-2 rounded-xl text-[#E85B43] bg-orange-50/60 hover:bg-orange-50 flex items-center justify-between text-xs font-bold transition-colors"
+                          >
+                            <div className="flex items-center gap-2">
+                              <ChefHat className="w-4 h-4 text-[#E85B43]" />
+                              <span>Open Admin Command Center</span>
+                            </div>
+                            <ArrowRight className="w-3.5 h-3.5 text-[#E85B43]" />
+                          </button>
+                        </div>
+                      )}
+
+                      {/* 4. Sign Out */}
+                      <div className="pt-2 mt-2 border-t border-[#F2ECE3]">
+                        <button
+                          id="menu-logout-button"
                           onClick={() => {
                             logoutUser();
                             setIsProfileMenuOpen(false);
                           }}
-                          className="w-full text-left px-3 py-2 rounded-xl text-red-600 hover:bg-red-50 flex items-center gap-2.5 text-xs font-semibold transition-colors"
+                          className="w-full text-left px-3 py-2 rounded-xl text-red-600 hover:bg-red-50 flex items-center justify-between text-xs font-bold transition-colors"
                         >
-                          <LogOut className="w-4 h-4" />
-                          <span>Sign Out</span>
+                          <div className="flex items-center gap-2">
+                            <LogOut className="w-4 h-4" />
+                            <span>Sign Out</span>
+                          </div>
                         </button>
                       </div>
                     </motion.div>
@@ -373,22 +539,24 @@ export const Navbar: React.FC = () => {
             <div className="pt-2 border-t border-[#F4EFE6] flex gap-2 px-2">
               <button
                 onClick={() => {
-                  setCurrentView('user-dashboard');
+                  setCurrentView('user_dashboard');
                   setIsMobileMenuOpen(false);
                 }}
                 className="flex-1 py-2 rounded-xl bg-[#FAF7F2] text-xs font-bold text-[#2C2724]"
               >
                 User Profile
               </button>
-              <button
-                onClick={() => {
-                  setCurrentView('admin-dashboard');
-                  setIsMobileMenuOpen(false);
-                }}
-                className="flex-1 py-2 rounded-xl bg-[#E85B43]/10 text-[#E85B43] text-xs font-bold"
-              >
-                Admin Panel
-              </button>
+              {currentUser?.role === 'admin' && (
+                <button
+                  onClick={() => {
+                    openAdminTab('menu_crud');
+                    setIsMobileMenuOpen(false);
+                  }}
+                  className="flex-1 py-2 rounded-xl bg-[#E85B43] text-white text-xs font-bold text-center shadow-xs"
+                >
+                  👑 Admin Panel
+                </button>
+              )}
             </div>
           </div>
         )}

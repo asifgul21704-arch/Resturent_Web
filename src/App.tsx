@@ -75,9 +75,9 @@ const MainContent: React.FC = () => {
           </motion.div>
         )}
 
-        {currentView === 'menu' && (
+        {(currentView === 'menu' || currentView === 'foods') && (
           <motion.div
-            key="menu"
+            key={currentView}
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.3 }}
@@ -119,7 +119,7 @@ const MainContent: React.FC = () => {
           </motion.div>
         )}
 
-        {currentView === 'user_dashboard' && (
+        {(currentView === 'user_dashboard' || currentView === 'user-dashboard') && (
           <motion.div
             key="user_dashboard"
             initial={{ opacity: 0, y: 10 }}
@@ -130,7 +130,7 @@ const MainContent: React.FC = () => {
           </motion.div>
         )}
 
-        {currentView === 'admin_dashboard' && (
+        {(currentView === 'admin_dashboard' || currentView === 'admin-dashboard') && (
           <motion.div
             key="admin_dashboard"
             initial={{ opacity: 0, y: 10 }}
