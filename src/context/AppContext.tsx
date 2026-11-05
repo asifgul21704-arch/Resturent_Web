@@ -500,6 +500,8 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const logoutUser = async () => {
     try {
       await fetch('/api/auth/logout', { method: 'POST', credentials: 'include' });
+    } catch (error) {
+      console.error('Foody logout request failed:', error);
     } finally {
       setCurrentUser(null);
       setCurrentViewState('home');
