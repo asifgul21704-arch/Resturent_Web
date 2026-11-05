@@ -24,7 +24,9 @@ const accountSchema = new Schema<AccountDocument>({
   createdAt: { type: Date, default: Date.now }
 });
 
-const Account = mongoose.models.Account || mongoose.model<AccountDocument>("Account", accountSchema);
+const Account: mongoose.Model<AccountDocument> =
+  (mongoose.models.Account as mongoose.Model<AccountDocument>) ||
+  mongoose.model<AccountDocument>("Account", accountSchema);
 export const authRouter = Router();
 
 const authLimiter = rateLimit({
