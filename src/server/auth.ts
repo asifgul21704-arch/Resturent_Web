@@ -100,9 +100,7 @@ export const requireAdmin = (req: AuthenticatedRequest, res: Response, next: Nex
   next();
 };
 
-authRouter.use(authLimiter);
-
-authRouter.post("/register", async (req: Request, res: Response) => {
+authRouter.post("/register", authLimiter, async (req: Request, res: Response) => {
   try {
     const { name, email, password, phone = "" } = req.body ?? {};
     if (typeof name !== "string" || name.trim().length < 2 || name.trim().length > 80) {
@@ -143,7 +141,7 @@ authRouter.post("/register", async (req: Request, res: Response) => {
   }
 });
 
-authRouter.post("/login", async (req: Request, res: Response) => {
+authRouter.post("/login", authLimiter, async (req: Request, res: Response) => {
   try {
     const { email, password } = req.body ?? {};
     if (typeof email !== "string" || typeof password !== "string" || !email.trim() || !password) {
