@@ -4,7 +4,7 @@ import { createServer as createViteServer } from "vite";
 import { GoogleGenAI } from "@google/genai";
 import dotenv from "dotenv";
 import cookieParser from "cookie-parser";
-import { authRouter, connectDatabaseAndBootstrapAdmin } from "./src/server/auth.js";
+import { authRouter, connectDatabaseAndBootstrapAdmin } from "./src/server/auth.ts";
 
 dotenv.config();
 
