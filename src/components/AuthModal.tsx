@@ -9,7 +9,6 @@ export const AuthModal: React.FC = () => {
     setIsAuthModalOpen,
     loginUser,
     registerUser,
-    switchDemoUser,
     showToast
   } = useApp();
 
@@ -18,14 +17,13 @@ export const AuthModal: React.FC = () => {
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
-  const [role, setRole] = useState<'customer' | 'admin'>('customer');
 
   if (!isAuthModalOpen) return null;
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (mode === 'signin') {
-      const res = loginUser(email, password);
+      const res = await loginUser(email, password);
       if (res.success) {
         showToast(`Welcome back, ${res.user?.name}!`, 'success');
         setIsAuthModalOpen(false);
@@ -33,11 +31,11 @@ export const AuthModal: React.FC = () => {
         showToast(res.message || 'Login failed', 'warning');
       }
     } else {
-      const res = registerUser({
+      const res = await registerUser({
         name,
         email,
-        phone: phone || '+1 (555) 000-0000',
-        role
+        phone,
+        password
       });
       if (res.success) {
         showToast(`Welcome to Foody, ${res.user?.name}!`, 'success');
@@ -46,11 +44,6 @@ export const AuthModal: React.FC = () => {
         showToast(res.message || 'Registration failed', 'warning');
       }
     }
-  };
-
-  const handleQuickDemo = (demoType: 'customer' | 'admin' | 'courier') => {
-    switchDemoUser(demoType);
-    setIsAuthModalOpen(false);
   };
 
   return (
@@ -81,27 +74,6 @@ export const AuthModal: React.FC = () => {
               ? 'Sign in to access your saved orders, GPS tracking & vouchers'
               : 'Create an account to unlock fast checkout & 20% off'}
           </p>
-        </div>
-
-        {/* Fast 1-Click Demo Logins */}
-        <div className="mb-6 p-4 rounded-2xl bg-[#FAF7F2] border border-[#EDE7DD] space-y-2">
-          <p className="text-[10px] uppercase font-bold text-[#8C847A] tracking-wider text-center">
-            ⚡ 1-Click Quick Demo Access
-          </p>
-          <div className="grid grid-cols-2 gap-2">
-            <button
-              onClick={() => handleQuickDemo('customer')}
-              className="px-3 py-2 bg-white hover:bg-[#FDF0EC] border border-[#EAE3D5] text-[#2C2724] hover:text-[#E85B43] rounded-xl text-xs font-bold transition-colors flex items-center justify-center gap-1 shadow-xs"
-            >
-              <span>👤 Customer Demo</span>
-            </button>
-            <button
-              onClick={() => handleQuickDemo('admin')}
-              className="px-3 py-2 bg-[#2C2724] hover:bg-black text-white rounded-xl text-xs font-bold transition-colors flex items-center justify-center gap-1 shadow-xs"
-            >
-              <span>👑 Admin Demo</span>
-            </button>
-          </div>
         </div>
 
         {/* Tab Switcher */}
@@ -157,17 +129,7 @@ export const AuthModal: React.FC = () => {
                 </div>
               </div>
 
-              <div>
-                <label className="text-xs font-bold text-[#57514B] block mb-1">Account Role</label>
-                <select
-                  value={role}
-                  onChange={(e) => setRole(e.target.value as any)}
-                  className="w-full px-3 py-2.5 bg-[#FAF7F2] border border-[#EDE7DD] rounded-xl text-xs font-bold"
-                >
-                  <option value="customer">Customer Account (Orders & Tracking)</option>
-                  <option value="admin">Store Admin (CRUD Inventory & Dispatch)</option>
-                </select>
-              </div>
+
             </>
           )}
 
@@ -193,7 +155,10 @@ export const AuthModal: React.FC = () => {
               <input
                 type="password"
                 required
-                placeholder="••••••••"
+                minLength={10}
+                maxLength={128}
+                autoComplete={mode === "signin" ? "current-password" : "new-password"}
+                placeholder="At least 10 characters"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 className="w-full pl-10 pr-3 py-2.5 bg-[#FAF7F2] border border-[#EDE7DD] rounded-xl text-xs"

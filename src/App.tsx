@@ -27,12 +27,15 @@ import { OrderInvoiceModal } from './components/OrderInvoiceModal';
 import { AIAssistantModal } from './components/AIAssistantModal';
 import { AuthModal } from './components/AuthModal';
 
-import { Sparkles, Bike, Navigation } from 'lucide-react';
+import { Sparkles, Bike, Navigation, ShieldCheck } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 
 const MainContent: React.FC = () => {
   const {
     currentView,
+    currentUser,
+    setIsAuthModalOpen,
+    setAuthModalMode,
     activeLiveOrder,
     setTrackingModalOrder,
     setIsAIAssistantOpen
@@ -130,7 +133,7 @@ const MainContent: React.FC = () => {
           </motion.div>
         )}
 
-        {(currentView === 'admin_dashboard' || currentView === 'admin-dashboard') && (
+        {(currentView === 'admin_dashboard' || currentView === 'admin-dashboard') && currentUser?.role === 'admin' && (
           <motion.div
             key="admin_dashboard"
             initial={{ opacity: 0, y: 10 }}
@@ -139,6 +142,20 @@ const MainContent: React.FC = () => {
           >
             <AdminDashboard />
           </motion.div>
+        )}
+
+        {(currentView === 'admin_dashboard' || currentView === 'admin-dashboard') && currentUser?.role !== 'admin' && (
+          <div className="max-w-xl mx-auto my-20 p-8 text-center bg-white rounded-3xl border border-[#EDE7DD]">
+            <ShieldCheck className="w-10 h-10 mx-auto mb-4 text-[#E85B43]" />
+            <h2 className="text-xl font-black text-[#2C2724]">Administrator sign-in required</h2>
+            <p className="text-sm text-[#78716A] mt-2">This area is restricted to authorized Foody administrators.</p>
+            <button
+              onClick={() => { setAuthModalMode('login'); setIsAuthModalOpen(true); }}
+              className="mt-5 px-6 py-3 rounded-full bg-[#E85B43] text-white text-xs font-black uppercase tracking-wider"
+            >
+              Admin Sign In
+            </button>
+          </div>
         )}
       </main>
 

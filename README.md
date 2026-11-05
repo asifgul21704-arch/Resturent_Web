@@ -159,16 +159,16 @@ npm start
 
 ---
 
-## 👥 Demo Accounts
+## 🔐 Real Customer & Administrator Authentication
 
-You can switch between customer and admin roles via the header or use these pre-configured credentials:
+- Customers register with their own name, email, phone, and password.
+- Passwords are hashed with bcrypt before storage in MongoDB Atlas.
+- Sessions are stored in secure HttpOnly cookies; the browser does not decide account roles.
+- Public signup always creates a **customer** account. There is no public Admin role selector or demo Admin login.
+- The Admin CRM loads real registered customer accounts from the database. Passwords and password hashes are never exposed.
+- Admin-only customer directory endpoint: `GET /api/admin/customers`.
 
-| Role | Email | Name | Capabilities |
-|------|-------|------|--------------|
-| **Customer** | `sarah@foody.com` | Sarah Mitchell | Place orders, track live deliveries, edit dietary profile |
-| **Admin** | `chef@foody.com` | Chef Alessandro | Manage live kitchen queue, add/edit menu items, view revenue |
-
----
+The initial Admin account is created from the private `ADMIN_EMAIL` and `ADMIN_PASSWORD` environment variables when the backend first connects to MongoDB. Keep these values private and change the initial password after first login if your deployment process supports rotation.
 
 ## 🏷️ Demo Promo Codes
 
