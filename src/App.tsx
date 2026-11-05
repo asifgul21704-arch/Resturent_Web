@@ -27,7 +27,7 @@ import { OrderInvoiceModal } from './components/OrderInvoiceModal';
 import { AIAssistantModal } from './components/AIAssistantModal';
 import { AuthModal } from './components/AuthModal';
 
-import { Sparkles, Bike, Navigation } from 'lucide-react';
+import { Sparkles, Bike, Navigation, ShieldCheck } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 
 const MainContent: React.FC = () => {
