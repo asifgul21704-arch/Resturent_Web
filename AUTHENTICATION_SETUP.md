@@ -30,5 +30,6 @@ The first administrator is created once when the server connects to MongoDB. If 
 - `POST /api/auth/login`
 - `GET /api/auth/me`
 - `POST /api/auth/logout`
+- `GET /api/admin/customers` (Admin only; returns customer profile fields, never passwords)
 
-The frontend integration and end-to-end verification are separate remaining steps; do not treat the dashboard as protected until those steps are complete.
+The signup/login UI now uses these session endpoints, and the Admin CRM requests the registered customer directory from the Admin-only endpoint. Build, runtime, database, and role-access tests still need to be run after you configure your Atlas and hosting environment variables.
