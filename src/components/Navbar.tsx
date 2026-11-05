@@ -35,7 +35,6 @@ export const Navbar: React.FC = () => {
     currentUser,
     setIsAuthModalOpen,
     logoutUser,
-    switchDemoUser,
     foodItems,
     orders,
     favorites,
