@@ -181,7 +181,7 @@ export const AdminDashboard: React.FC = () => {
   const [taxRatePercent, setTaxRatePercent] = useState(8.0);
   const [broadcastBanner, setBroadcastBanner] = useState('Fresh organic ingredients freshly sourced every morning.');
   const [adminName, setAdminName] = useState(currentUser?.name || 'Chef Alessandro');
-  const [adminEmail, setAdminEmail] = useState(currentUser?.email || 'admin@thefoody.com');
+  const [adminEmail, setAdminEmail] = useState(currentUser?.email || 'Administrator account');
 
   // --- Calculations for Analytics ---
   const totalRevenue = useMemo(() => {
@@ -481,16 +481,7 @@ export const AdminDashboard: React.FC = () => {
               <span>Add New Dish</span>
             </button>
 
-            {/* Demo Account Switcher */}
-            <button
-              id="admin-switch-to-customer"
-              onClick={() => switchDemoUser('customer')}
-              className="px-3.5 py-2.5 bg-white/10 text-neutral-200 hover:text-white hover:bg-white/20 text-xs font-bold rounded-2xl transition-all flex items-center gap-1.5"
-              title="Test user perspective"
-            >
-              <Users className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline">View as Sarah</span>
-            </button>
+
           </div>
         </div>
 
@@ -516,7 +507,7 @@ export const AdminDashboard: React.FC = () => {
           { id: 'orders_dispatch', label: '🛵 Orders & GPS Dispatch', count: orders.length },
           { id: 'promos', label: '🏷️ Promo Vouchers', count: promoCodes.length },
           { id: 'analytics', label: '📊 Revenue & Analytics' },
-          { id: 'customers', label: '👥 Customer Directory', count: DEFAULT_USERS.length },
+          { id: 'customers', label: '👥 Customer Directory', count: registeredCustomers.length },
           { id: 'settings', label: '⚙️ Kitchen & Store Settings' }
         ].map(tab => (
           <button
