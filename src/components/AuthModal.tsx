@@ -155,7 +155,10 @@ export const AuthModal: React.FC = () => {
               <input
                 type="password"
                 required
-                placeholder="••••••••"
+                minLength={10}
+                maxLength={128}
+                autoComplete={mode === "signin" ? "current-password" : "new-password"}
+                placeholder="At least 10 characters"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 className="w-full pl-10 pr-3 py-2.5 bg-[#FAF7F2] border border-[#EDE7DD] rounded-xl text-xs"
