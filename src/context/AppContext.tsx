@@ -11,7 +11,6 @@ import {
 } from '../types';
 import {
   INITIAL_FOOD_ITEMS,
-  DEFAULT_USERS,
   SAMPLE_INITIAL_ORDER,
   PROMO_CODES
 } from '../data/mockData';
@@ -70,14 +69,13 @@ interface AppContextType {
 
   // Authentication & Users
   currentUser: UserProfile | null;
-  loginUser: (email: string, password?: string) => { success: boolean; user?: UserProfile; message?: string };
-  registerUser: (params: { name: string; email: string; phone: string; role?: 'customer' | 'admin' }) => { success: boolean; user?: UserProfile; message?: string };
+  loginUser: (email: string, password: string) => Promise<{ success: boolean; user?: UserProfile; message?: string }>;
+  registerUser: (params: { name: string; email: string; phone: string; password: string }) => Promise<{ success: boolean; user?: UserProfile; message?: string }>;
   logoutUser: () => void;
   updateProfile: (updates: Partial<UserProfile>) => void;
   updateUserProfile: (updates: Partial<UserProfile>) => void;
   addAddress: (address: Omit<UserAddress, 'id'>) => void;
   deleteAddress: (addressId: string) => void;
-  switchDemoUser: (role: 'customer' | 'admin' | 'courier') => void;
 
   // Orders
   orders: Order[];
@@ -133,14 +131,22 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const setCurrentView = (view: string) => {
     let normalized = view;
     if (view === 'admin-dashboard') normalized = 'admin_dashboard';
+    if ((normalized === 'admin_dashboard') && currentUser?.role !== 'admin') {
+      setAuthModalMode('login');
+      setIsAuthModalOpen(true);
+      showToast('Please sign in with your administrator account.', 'warning');
+      return;
+    }
     if (view === 'user-dashboard') normalized = 'user_dashboard';
     setCurrentViewState(normalized);
   };
 
   const openAdminTab = (tab: AdminTab = 'menu_crud') => {
     if (currentUser?.role !== 'admin') {
-      setCurrentUser(DEFAULT_USERS[1]);
-      showToast('Switched to Admin Account (Chef Alessandro)', 'info');
+      setAuthModalMode('login');
+      setIsAuthModalOpen(true);
+      showToast('Administrator sign-in is required.', 'warning');
+      return;
     }
     setAdminActiveTab(tab);
     setCurrentViewState('admin_dashboard');
@@ -153,10 +159,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   });
 
   // User State
-  const [currentUser, setCurrentUser] = useState<UserProfile | null>(() => {
-    const saved = localStorage.getItem('foody_user');
-    return saved ? JSON.parse(saved) : DEFAULT_USERS[0];
-  });
+  const [currentUser, setCurrentUser] = useState<UserProfile | null>(null);
 
   // Cart State
   const [cart, setCart] = useState<CartItem[]>(() => {
@@ -206,12 +209,17 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   }, [promoCodes]);
 
   useEffect(() => {
-    if (currentUser) {
-      localStorage.setItem('foody_user', JSON.stringify(currentUser));
-    } else {
-      localStorage.removeItem('foody_user');
-    }
-  }, [currentUser]);
+    let active = true;
+    fetch('/api/auth/me', { credentials: 'include' })
+      .then(async response => {
+        if (!response.ok) return null;
+        const data = await response.json();
+        return data.user as UserProfile;
+      })
+      .then(user => { if (active && user) setCurrentUser(user); })
+      .catch(() => { if (active) setCurrentUser(null); });
+    return () => { active = false; };
+  }, []);
 
   useEffect(() => {
     localStorage.setItem('foody_cart', JSON.stringify(cart));
@@ -452,69 +460,51 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const cartTax = (cartSubtotal - cartDiscount) > 0 ? (cartSubtotal - cartDiscount) * 0.08 : 0;
   const cartTotal = Math.max(0, cartSubtotal - cartDiscount + deliveryFee + cartTax + (cartSubtotal > 0 ? tipAmount : 0));
 
-  // User Actions
-  const loginUser = (email: string, _password?: string) => {
-    const existing = DEFAULT_USERS.find(u => u.email.toLowerCase() === email.toLowerCase());
-    if (existing) {
-      setCurrentUser(existing);
-      showToast(`Welcome back, ${existing.name}!`, 'success');
-      return { success: true, user: existing };
-    } else {
-      const newUser: UserProfile = {
-        id: `user-${Date.now()}`,
-        name: email.split('@')[0].replace('.', ' '),
-        email,
-        phone: '+1 (555) 000-1234',
-        avatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=200&q=80',
-        role: 'customer',
-        addresses: [
-          {
-            id: 'addr-default',
-            label: 'Home',
-            street: '123 Main Street',
-            city: 'Rome',
-            zipCode: '00100',
-            isDefault: true
-          }
-        ],
-        dietaryPreferences: ['Gourmet'],
-        createdAt: new Date().toISOString().split('T')[0]
-      };
-      setCurrentUser(newUser);
-      showToast(`Account created! Welcome, ${newUser.name}`, 'success');
-      return { success: true, user: newUser };
+  // Authentication uses the server session; browser storage is never trusted for identity.
+  const loginUser = async (email: string, password: string) => {
+    try {
+      const response = await fetch('/api/auth/login', {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password })
+      });
+      const data = await response.json();
+      if (!response.ok) return { success: false, message: data.message || 'Login failed.' };
+      setCurrentUser(data.user as UserProfile);
+      showToast(`Welcome back, ${data.user.name}!`, 'success');
+      return { success: true, user: data.user as UserProfile };
+    } catch {
+      return { success: false, message: 'Unable to connect to the server. Please try again.' };
     }
   };
 
-  const registerUser = (params: { name: string; email: string; phone: string; role?: 'customer' | 'admin' }) => {
-    const newUser: UserProfile = {
-      id: `user-${Date.now()}`,
-      name: params.name,
-      email: params.email,
-      phone: params.phone || '+1 (555) 000-0000',
-      avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80',
-      role: params.role || 'customer',
-      addresses: [
-        {
-          id: 'addr-1',
-          label: 'Home',
-          street: '100 Sunset Boulevard',
-          city: 'Rome',
-          zipCode: '00100',
-          isDefault: true
-        }
-      ],
-      dietaryPreferences: ['Healthy'],
-      createdAt: new Date().toISOString().split('T')[0]
-    };
-    setCurrentUser(newUser);
-    showToast(`Welcome to Foody, ${params.name}!`, 'success');
-    return { success: true, user: newUser };
+  const registerUser = async (params: { name: string; email: string; phone: string; password: string }) => {
+    try {
+      const response = await fetch('/api/auth/register', {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(params)
+      });
+      const data = await response.json();
+      if (!response.ok) return { success: false, message: data.message || 'Registration failed.' };
+      setCurrentUser(data.user as UserProfile);
+      showToast(`Welcome to Foody, ${data.user.name}!`, 'success');
+      return { success: true, user: data.user as UserProfile };
+    } catch {
+      return { success: false, message: 'Unable to connect to the server. Please try again.' };
+    }
   };
 
-  const logoutUser = () => {
-    setCurrentUser(null);
-    showToast('Logged out successfully', 'info');
+  const logoutUser = async () => {
+    try {
+      await fetch('/api/auth/logout', { method: 'POST', credentials: 'include' });
+    } finally {
+      setCurrentUser(null);
+      setCurrentViewState('home');
+      showToast('Logged out successfully', 'info');
+    }
   };
 
   const updateProfile = (updates: Partial<UserProfile>) => {
@@ -539,18 +529,6 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     const updatedAddresses = currentUser.addresses.filter(a => a.id !== addressId);
     updateProfile({ addresses: updatedAddresses });
     showToast('Address removed', 'info');
-  };
-
-  const switchDemoUser = (role: 'customer' | 'admin' | 'courier') => {
-    if (role === 'admin') {
-      setCurrentUser(DEFAULT_USERS[1]);
-      setCurrentView('admin_dashboard');
-      showToast('Switched to Admin Account (Chef Alessandro)', 'info');
-    } else {
-      setCurrentUser(DEFAULT_USERS[0]);
-      setCurrentView('home');
-      showToast('Switched to Customer Account (Sarah Mitchell)', 'info');
-    }
   };
 
   // Orders
@@ -793,7 +771,6 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         updateUserProfile: updateProfile,
         addAddress,
         deleteAddress,
-        switchDemoUser,
         orders,
         createOrder,
         updateOrderStatus,
