@@ -108,13 +108,14 @@ export const AdminDashboard: React.FC = () => {
     }
   };
 
+  // Navigation tabs synced with global context
+  const activeTab = adminActiveTab || 'menu_crud';
+  const setActiveTab = setAdminActiveTab;
+
   useEffect(() => {
     if (activeTab === 'customers') loadRegisteredCustomers();
   }, [activeTab]);
 
-  // Navigation tabs synced with global context
-  const activeTab = adminActiveTab || 'menu_crud';
-  const setActiveTab = setAdminActiveTab;
 
   // Menu Search, Filter, Sort & View Mode
   const [menuSearch, setMenuSearch] = useState('');
