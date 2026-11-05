@@ -160,6 +160,32 @@ authRouter.post("/login", async (req: Request, res: Response) => {
   }
 });
 
+authRouter.get("/customers", requireAuth, requireAdmin, async (_req: AuthenticatedRequest, res: Response) => {
+  try {
+    const customers = await Account.find({ role: "customer" })
+      .select("name email phone createdAt")
+      .sort({ createdAt: -1 })
+      .lean();
+    return res.json({
+      customers: customers.map((customer: any) => ({
+        id: customer._id.toString(),
+        name: customer.name,
+        email: customer.email,
+        phone: customer.phone || "",
+        role: "customer",
+        avatar: "",
+        createdAt: customer.createdAt ? new Date(customer.createdAt).toISOString() : null,
+        addresses: [],
+        dietaryPreferences: []
+      })),
+      total: customers.length
+    });
+  } catch (error) {
+    console.error("Foody customer directory error:", error);
+    return res.status(500).json({ message: "Unable to load customer directory." });
+  }
+});
+
 authRouter.get("/me", requireAuth, (req: AuthenticatedRequest, res: Response) => {
   res.json({ user: publicAccount(req.account!) });
 });
