@@ -134,7 +134,10 @@ authRouter.post("/register", async (req: Request, res: Response) => {
 
     issueSession(res, account);
     return res.status(201).json({ user: publicAccount(account) });
-  } catch (error) {
+  } catch (error: any) {
+    if (error?.code === 11000) {
+      return res.status(409).json({ message: "An account with this email already exists." });
+    }
     console.error("Foody registration error:", error);
     return res.status(500).json({ message: "Unable to create your account right now." });
   }
@@ -162,6 +165,7 @@ authRouter.post("/login", async (req: Request, res: Response) => {
 
 authRouter.get("/customers", requireAuth, requireAdmin, async (_req: AuthenticatedRequest, res: Response) => {
   try {
+    res.setHeader("Cache-Control", "no-store");
     const customers = await Account.find({ role: "customer" })
       .select("name email phone createdAt")
       .sort({ createdAt: -1 })
