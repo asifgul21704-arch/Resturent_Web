@@ -40,8 +40,7 @@ import {
   UserCheck
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
-import { FoodItem, Order, OrderStatus, FoodAddon, PromoCode } from '../types';
-import { DEFAULT_USERS } from '../data/mockData';
+import { FoodItem, Order, OrderStatus, FoodAddon, PromoCode, UserProfile } from '../types';
 
 // High-resolution culinary photo presets for quick-filling dish images
 const PRESET_IMAGE_SUGGESTIONS = [
@@ -84,11 +83,34 @@ export const AdminDashboard: React.FC = () => {
     setTrackingModalOrder,
     currentUser,
     updateUserProfile,
-    switchDemoUser,
     showToast,
     adminActiveTab,
     setAdminActiveTab
   } = useApp();
+
+  const [registeredCustomers, setRegisteredCustomers] = useState<UserProfile[]>([]);
+  const [customersLoading, setCustomersLoading] = useState(false);
+  const [customersError, setCustomersError] = useState('');
+  const [customerSearch, setCustomerSearch] = useState('');
+
+  const loadRegisteredCustomers = async () => {
+    setCustomersLoading(true);
+    setCustomersError('');
+    try {
+      const response = await fetch('/api/admin/customers', { credentials: 'include' });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.message || 'Could not load customers.');
+      setRegisteredCustomers(data.customers || []);
+    } catch (error) {
+      setCustomersError(error instanceof Error ? error.message : 'Could not load customers.');
+    } finally {
+      setCustomersLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (activeTab === 'customers') loadRegisteredCustomers();
+  }, [activeTab]);
 
   // Navigation tabs synced with global context
   const activeTab = adminActiveTab || 'menu_crud';
@@ -1491,82 +1513,80 @@ export const AdminDashboard: React.FC = () => {
 
       {/* ========================================================================= */}
       {/* TAB 5: CUSTOMER DIRECTORY & CRM */}
-      {/* ========================================================================= */}
       {activeTab === 'customers' && (
         <div className="space-y-6">
-          <div>
-            <h2 className="text-xl font-black text-[#2C2724] font-display">
-              Customer Accounts & Client CRM
-            </h2>
-            <p className="text-xs text-[#78716A]">
-              View registered patrons, contact credentials, saved address books, and dietary preferences.
-            </p>
+          <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
+            <div>
+              <p className="text-[10px] uppercase tracking-[0.2em] font-black text-[#E85B43]">Customer relationship management</p>
+              <h2 className="text-xl font-black text-[#2C2724] font-display">Registered Customers</h2>
+              <p className="text-xs text-[#78716A] mt-1">Live customer accounts securely loaded from your MongoDB database.</p>
+            </div>
+            <button onClick={loadRegisteredCustomers} disabled={customersLoading} className="px-4 py-2.5 rounded-xl bg-[#2C2724] text-white text-xs font-bold disabled:opacity-50">
+              {customersLoading ? 'Refreshing...' : 'Refresh Customers'}
+            </button>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-            {DEFAULT_USERS.map(user => (
-              <div
-                key={user.id}
-                className="bg-white rounded-3xl p-6 border border-[#EDE7DD] shadow-xs flex flex-col justify-between"
-              >
-                <div>
-                  <div className="flex items-center gap-4 mb-4">
-                    <img
-                      src={user.avatar}
-                      alt={user.name}
-                      className="w-14 h-14 rounded-full object-cover border-2 border-[#E85B43]"
-                    />
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <h3 className="font-bold text-base text-[#2C2724]">{user.name}</h3>
-                        <span className={`text-[10px] font-black uppercase px-2 py-0.5 rounded-full ${
-                          user.role === 'admin' ? 'bg-[#E85B43] text-white' : 'bg-emerald-100 text-emerald-800'
-                        }`}>
-                          {user.role}
-                        </span>
-                      </div>
-                      <p className="text-xs text-[#8C847A]">{user.email}</p>
-                      <p className="text-xs text-[#8C847A]">{user.phone}</p>
-                    </div>
-                  </div>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div className="bg-white border border-[#EDE7DD] rounded-2xl p-5">
+              <p className="text-[10px] uppercase tracking-wider font-bold text-[#8C847A]">Total registered</p>
+              <p className="text-3xl font-black text-[#2C2724] mt-1">{registeredCustomers.length}</p>
+            </div>
+            <div className="bg-white border border-[#EDE7DD] rounded-2xl p-5">
+              <p className="text-[10px] uppercase tracking-wider font-bold text-[#8C847A]">Account type</p>
+              <p className="text-lg font-black text-[#2C2724] mt-2">Customer</p>
+            </div>
+            <div className="bg-white border border-[#EDE7DD] rounded-2xl p-5">
+              <p className="text-[10px] uppercase tracking-wider font-bold text-[#8C847A]">Data source</p>
+              <p className="text-lg font-black text-[#2C2724] mt-2">MongoDB Atlas</p>
+            </div>
+          </div>
 
-                  <div className="space-y-2 bg-[#FAF7F2] p-4 rounded-2xl text-xs">
-                    <p className="font-bold text-[#2C2724]">Saved Addresses:</p>
-                    {user.addresses.map(addr => (
-                      <p key={addr.id} className="text-[#57514B]">
-                        • <span className="font-semibold">{addr.label}:</span> {addr.street}, {addr.city} {addr.zipCode}
-                      </p>
-                    ))}
+          <div className="bg-white border border-[#EDE7DD] rounded-3xl p-4 space-y-4">
+            <div className="relative">
+              <Search className="w-4 h-4 text-[#8C847A] absolute left-3.5 top-1/2 -translate-y-1/2" />
+              <input value={customerSearch} onChange={e => setCustomerSearch(e.target.value)} placeholder="Search by customer name, email or phone..." className="w-full pl-10 pr-4 py-3 bg-[#FAF7F2] border border-[#EDE7DD] rounded-2xl text-xs outline-none focus:border-[#E85B43]" />
+            </div>
 
-                    <div className="pt-2 border-t border-[#EDE7DD] flex flex-wrap gap-1">
-                      {user.dietaryPreferences.map((pref, i) => (
-                        <span key={i} className="text-[10px] bg-white px-2 py-0.5 rounded-md font-semibold text-[#57514B]">
-                          {pref}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-
-                <div className="pt-4 mt-4 border-t border-[#F0EAE1] flex items-center justify-between">
-                  <span className="text-[11px] text-[#8C847A]">Client since {user.createdAt}</span>
-                  <button
-                    onClick={() => {
-                      switchDemoUser(user.role === 'admin' ? 'admin' : 'customer');
-                      showToast(`Switched active session to ${user.name}`, 'info');
-                    }}
-                    className="text-xs font-bold text-[#E85B43] hover:underline"
-                  >
-                    Log In as this User →
-                  </button>
-                </div>
+            {customersError && <div className="p-4 rounded-2xl bg-red-50 text-red-700 text-xs">{customersError}</div>}
+            {customersLoading ? (
+              <div className="py-12 text-center text-xs text-[#8C847A]">Loading registered customers...</div>
+            ) : registeredCustomers.filter(user => [user.name, user.email, user.phone].some(value => value?.toLowerCase().includes(customerSearch.toLowerCase()))).length === 0 ? (
+              <div className="py-12 text-center">
+                <Users className="w-8 h-8 mx-auto text-[#C8BFB2] mb-3" />
+                <p className="font-bold text-sm text-[#2C2724]">{customerSearch ? 'No matching customers found' : 'No registered customers yet'}</p>
+                <p className="text-xs text-[#8C847A] mt-1">New customer signups will appear here automatically.</p>
               </div>
-            ))}
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-xs">
+                  <thead className="text-[#8C847A] bg-[#FAF7F2]">
+                    <tr>
+                      <th className="p-3 rounded-l-xl">Customer</th>
+                      <th className="p-3">Email</th>
+                      <th className="p-3">Phone</th>
+                      <th className="p-3">Registered</th>
+                      <th className="p-3 rounded-r-xl">Account</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-[#F0EAE1]">
+                    {registeredCustomers.filter(user => [user.name, user.email, user.phone].some(value => value?.toLowerCase().includes(customerSearch.toLowerCase()))).map(user => (
+                      <tr key={user.id} className="hover:bg-[#FAF7F2]/70">
+                        <td className="p-3 font-bold text-[#2C2724]">{user.name}</td>
+                        <td className="p-3 text-[#57514B]">{user.email}</td>
+                        <td className="p-3 text-[#57514B]">{user.phone || 'Not provided'}</td>
+                        <td className="p-3 text-[#8C847A]">{user.createdAt ? new Date(user.createdAt).toLocaleDateString() : '—'}</td>
+                        <td className="p-3"><span className="px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700 font-bold">Customer</span></td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
           </div>
+          <p className="text-[10px] text-[#8C847A]">Privacy: customer passwords and password hashes are never returned by this directory API.</p>
         </div>
       )}
 
-      {/* ========================================================================= */}
       {/* TAB 6: KITCHEN & STORE SETTINGS */}
       {/* ========================================================================= */}
       {activeTab === 'settings' && (
