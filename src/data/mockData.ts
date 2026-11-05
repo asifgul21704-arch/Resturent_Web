@@ -1,4 +1,4 @@
-import { FoodItem, CategoryInfo, ChefInfo, PromoCode, UserProfile, Order } from '../types';
+import { FoodItem, CategoryInfo, ChefInfo, PromoCode, Order } from '../types';
 
 export const INITIAL_FOOD_ITEMS: FoodItem[] = [
   // Signature Featured Salads (From screenshot carousel)
@@ -720,59 +720,6 @@ export const PROMO_CODES_DATA = [
     discountFlat: 10,
     minSubtotal: 30,
     description: '$10 instant voucher on orders above $30'
-  }
-];
-
-export const DEFAULT_USERS: UserProfile[] = [
-  {
-    id: 'user-sarah',
-    name: 'Sarah Mitchell',
-    email: 'sarah.mitchell@example.com',
-    phone: '+1 (555) 234-8971',
-    avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=200&q=80',
-    role: 'customer',
-    addresses: [
-      {
-        id: 'addr-1',
-        label: 'Home',
-        street: '742 Evergreen Terrace',
-        apartment: 'Apt 4B',
-        city: 'Springfield',
-        zipCode: '97477',
-        isDefault: true
-      },
-      {
-        id: 'addr-2',
-        label: 'Office',
-        street: '100 Silicon Way, Tech Park',
-        apartment: 'Suite 300',
-        city: 'Springfield',
-        zipCode: '97478',
-        isDefault: false
-      }
-    ],
-    dietaryPreferences: ['Organic Greens', 'Low Calorie'],
-    createdAt: '2024-01-15'
-  },
-  {
-    id: 'user-admin',
-    name: 'Chef Alessandro (Admin)',
-    email: 'admin@thefoody.com',
-    phone: '+1 (555) 888-9999',
-    avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80',
-    role: 'admin',
-    addresses: [
-      {
-        id: 'addr-hq',
-        label: 'Foody HQ Restaurant',
-        street: '12 Gourmet Avenue',
-        city: 'Rome / Downtown',
-        zipCode: '00100',
-        isDefault: true
-      }
-    ],
-    dietaryPreferences: ['All Foods'],
-    createdAt: '2023-11-01'
   }
 ];
 
